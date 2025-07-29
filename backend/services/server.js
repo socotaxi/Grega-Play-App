@@ -1,48 +1,80 @@
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
-import { v4 as uuidv4 } from 'uuid';
-import processVideo from './processVideo.js';
+const express = require('express');
+const cors = require('cors');
+const dotenv = require('dotenv');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const { v4: uuidv4 } = require('uuid');
+const processVideo = require('./processVideo');
+const { createClient } = require('@supabase/supabase-js');
 
 dotenv.config();
 
 const app = express();
 const PORT = 3000;
+
 app.use(cors());
 app.use(express.json());
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 // Route de test
 app.get('/', (req, res) => {
   res.send('🚀 Backend Grega Play opérationnel');
 });
 
-// ✅ Route d'upload de vidéos
+// ✅ Route d'upload de vidéos avec insertion Supabase
 const upload = multer({ dest: 'uploads/' });
 
 app.post('/api/videos/upload', upload.single('video'), async (req, res) => {
-  const { eventId } = req.query;
+  const { eventId, participantName } = req.query;
+  const file = req.file;
 
-  if (!eventId || !req.file) {
+  if (!eventId || !file) {
     return res.status(400).json({ error: 'eventId ou fichier manquant.' });
   }
 
-  const tmpDir = path.join('tmp', eventId);
-  if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
+  // Lire la vidéo uploadée
+  const buffer = fs.readFileSync(file.path);
+  const ext = path.extname(file.originalname) || '.mp4';
+  const filename = `${Date.now()}-${file.originalname}`;
+  const storagePath = `submissions/${eventId}/${filename}`;
 
-  const ext = path.extname(req.file.originalname) || '.mp4';
-  const newFilename = `video${uuidv4()}${ext}`;
-  const newPath = path.join(tmpDir, newFilename);
+  // Upload dans Supabase Storage
+  const { error: uploadError } = await supabase.storage
+    .from('videos')
+    .upload(storagePath, buffer, {
+      contentType: file.mimetype,
+      upsert: true
+    });
 
-  fs.rename(req.file.path, newPath, err => {
-    if (err) {
-      console.error('Erreur lors du déplacement du fichier :', err);
-      return res.status(500).json({ error: 'Erreur serveur.' });
-    }
-    return res.json({ success: true, path: newPath });
-  });
+  if (uploadError) {
+    console.error('Erreur upload Supabase:', uploadError);
+    return res.status(500).json({ error: 'Erreur upload vidéo.' });
+  }
+
+  // Enregistrement dans la table 'videos'
+  const { error: insertError } = await supabase
+    .from('videos')
+    .insert({
+      event_id: eventId,
+      participant_name: participantName || 'Anonyme',
+      storage_path: storagePath,
+      status: 'validated'
+    });
+
+  if (insertError) {
+    console.error('Erreur insertion DB:', insertError);
+    return res.status(500).json({ error: 'Erreur enregistrement base de données.' });
+  }
+
+  // Supprimer le fichier temporaire
+  fs.unlinkSync(file.path);
+
+  res.json({ success: true, path: storagePath });
 });
 
 // ✅ Route de génération de vidéo finale

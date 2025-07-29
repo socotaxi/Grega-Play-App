@@ -1,19 +1,18 @@
-import dotenv from 'dotenv';
-dotenv.config();
+require('dotenv').config();
 
-import fs from 'fs';
-import path from 'path';
-import { exec } from 'child_process';
-import { createClient } from '@supabase/supabase-js';
-import { get } from 'https';
-import { get as getHttp } from 'http';
+const fs = require('fs');
+const path = require('path');
+const { exec } = require('child_process');
+const { createClient } = require('@supabase/supabase-js');
+const { get } = require('https');
+const { get: getHttp } = require('http');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-export default async function processVideo(eventId) {
+async function processVideo(eventId) {
   console.log(`🎬 Démarrage du montage pour l'événement : ${eventId}`);
 
   // 1. Récupérer les vidéos liées à l’événement
@@ -49,7 +48,7 @@ export default async function processVideo(eventId) {
     .map(p => `file '${path.resolve(p).replace(/\\/g, '/')}'`)
     .join('\n');
 
-  console.log(`📄 Contenu de list.txt :\n${ffmpegList}`); // ✅ journalisation utile
+  console.log(`📄 Contenu de list.txt :\n${ffmpegList}`);
   fs.writeFileSync(listPath, ffmpegList);
 
   const outputPath = path.join(tempDir, 'final.mp4');
@@ -115,3 +114,5 @@ function runFFmpegConcat(listPath, outputPath) {
     });
   });
 }
+
+module.exports = processVideo;
