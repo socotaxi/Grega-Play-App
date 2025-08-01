@@ -3,9 +3,12 @@ import MainLayout from '../components/layout/MainLayout';
 import { useAuth } from '../context/AuthContext';
 import supabase from '../lib/supabaseClient';
 import Button from '../components/ui/Button';
+import { useNavigate } from 'react-router-dom';
+
 
 const ProfilePage = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({});
@@ -122,7 +125,13 @@ const ProfilePage = () => {
               <p className="text-sm text-gray-500">{profile.email}</p>
               <div className="flex gap-4 mt-4">
                 <Button onClick={() => setEditMode(true)}>Modifier le profil</Button>
-                <Button variant="secondary" onClick={logout}>Se déconnecter</Button>
+                <Button   variant="secondary"   onClick={async () => {await logout();
+                  navigate('/login'); // ou '/' si tu préfères aller sur la Home
+               }}
+>
+  Se déconnecter
+</Button>
+
               </div>
             </div>
 

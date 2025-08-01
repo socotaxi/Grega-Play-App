@@ -126,7 +126,7 @@ const SubmitVideoPage = () => {
     setSubmitting(true);
 
     try {
-      await videoService.uploadVideo(selectedFile, eventId, null, participantName.trim());
+      await videoService.uploadVideo(eventId, participantName.trim(), selectedFile, null);
       setUploadProgress(100);
       clearInterval(timer);
       setSuccess(true);

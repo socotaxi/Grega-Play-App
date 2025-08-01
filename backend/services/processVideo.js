@@ -1,7 +1,9 @@
-require('dotenv').config();
+const path = require('path');
+if (!process.env.SUPABASE_URL) {
+  require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+}
 
 const fs = require('fs');
-const path = require('path');
 const { exec } = require('child_process');
 const { createClient } = require('@supabase/supabase-js');
 const { get } = require('https');

@@ -14,6 +14,7 @@ import InvitationPage from "./pages/InvitationPage";
 import SubmitVideoPage from "./pages/SubmitVideoPage";
 import FinalVideoPage from "./pages/FinalVideoPage";
 import ManageParticipantsPage from "./pages/ManageParticipantsPage";
+import UploadTestPage from "./pages/UploadTestPage"; // ajoute cette ligne en haut avec les autres imports
 
 // Layout & Auth
 import MainLayout from "./components/layout/MainLayout";
@@ -39,6 +40,7 @@ const App = () => {
           <Route path="/event/:eventId/manage" element={<ManageParticipantsPage />} />
           <Route path="/invitation/:token" element={<InvitationPage />} />
           <Route path="/events/:eventId/participants" element={<ManageParticipantsPage />} />
+          <Route path="/upload-test" element={<UploadTestPage />} />
 
         </Routes>
       
