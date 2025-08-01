@@ -5,7 +5,7 @@ const videoService = {
     formData.append('eventId', eventId);
     formData.append('participantName', participantName);
 
-    const response = await fetch('http://localhost:4000/api/videos/upload', {
+    const response = await fetch('http://grega-play-backend-production.up.railway.app/api/videos/upload', {
       method: 'POST',
       body: formData
     });
@@ -15,7 +15,7 @@ const videoService = {
   },
 
   async generateFinalVideo(eventId) {
-    const response = await fetch(`http://localhost:4000/api/videos/process?eventId=${eventId}`, {
+    const response = await fetch(`https://grega-play-backend-production.up.railway.app/api/videos/process?eventId=${eventId}`, {
       method: 'POST'
     });
     if (!response.ok) throw new Error("Erreur génération vidéo");
@@ -23,8 +23,18 @@ const videoService = {
   },
 
   async getVideosByEvent(eventId) {
-    const response = await fetch(`http://localhost:4000/api/videos?eventId=${eventId}`);
+    const response = await fetch(`https://grega-play-backend-production.up.railway.app/api/videos?eventId=${eventId}`);
     if (!response.ok) throw new Error("Erreur chargement vidéos");
+    return response.json();
+  },
+
+  // 🔽 NOUVELLE FONCTION POUR SUPPRIMER UNE VIDÉO
+  // Cette fonction envoie une requête DELETE à ton backend pour supprimer une vidéo par ID
+  async deleteVideo(videoId) {
+    const response = await fetch(`https://grega-play-backend-production.up.railway.app/api/videos/${videoId}`, {
+      method: 'DELETE'
+    });
+    if (!response.ok) throw new Error("Erreur suppression vidéo");
     return response.json();
   }
 };

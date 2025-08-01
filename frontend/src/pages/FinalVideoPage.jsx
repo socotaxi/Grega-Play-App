@@ -58,6 +58,18 @@ const FinalVideoPage = () => {
     fetchEventDetails();
   }, [eventId]);
 
+  // 🔽 AJOUT : fonction pour supprimer une vidéo si on est créateur
+  const handleDeleteVideo = async (videoId) => {
+    if (!window.confirm("Supprimer cette vidéo ?")) return;
+    try {
+      await videoService.deleteVideo(videoId);
+      setSubmittedVideos(prev => prev.filter(v => v.id !== videoId));
+    } catch (err) {
+      console.error("Erreur suppression vidéo :", err);
+      alert("Erreur lors de la suppression de la vidéo.");
+    }
+  };
+
   const handleGenerateVideo = async () => {
     if (!event) return;
 
@@ -189,27 +201,44 @@ const FinalVideoPage = () => {
                 </div>
               )}
             </div>
+          ) : event?.status === 'done' && finalVideo && !isOwner ? (
+            <p className="text-center text-gray-600 mt-4 italic">
+              🎬 La vidéo finale de <strong>{event.title}</strong> est disponible.<br />
+              Le créateur de l’événement va bientôt la partager avec vous.
+            </p>
           ) : (
             <p className="text-center text-gray-500 mt-4">Aucune vidéo finale disponible.</p>
           )}
         </div>
-      {submittedVideos.length > 0 && (
-  <div className="mt-10">
-    <h3 className="text-lg font-semibold text-gray-900 mb-4">🎥 Vidéos soumises</h3>
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-      {submittedVideos.map((video, index) => (
-        <div key={video.id || index} className="border rounded-lg shadow-sm p-2 bg-white">
-          <video
-            src={`https://cgqnrqbyvetcgwolkjvl.supabase.co/storage/v1/object/public/videos/${video.storage_path}`}
-            controls
-            className="w-full h-auto rounded"
-          />
-          <p className="mt-2 text-sm text-gray-700 text-center truncate">{video.participant_name}</p>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
+ 
+        {/* 🔽 MODIFICATION : ajout du bouton supprimer pour le créateur */}
+        {submittedVideos.length > 0 && (
+          <div className="mt-10">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">🎥 Vidéos soumises</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {submittedVideos.map((video, index) => (
+                <div key={video.id || index} className="border rounded-lg shadow-sm p-2 bg-white">
+                  <video
+                    src={`https://cgqnrqbyvetcgwolkjvl.supabase.co/storage/v1/object/public/videos/${video.storage_path}`}
+                    controls
+                    className="w-full h-auto rounded"
+                  />
+                  <p className="mt-2 text-sm text-gray-700 text-center truncate">{video.participant_name}</p>
+                  {isOwner && (
+                    <div className="mt-2 flex justify-center">
+                      <button
+                        onClick={() => handleDeleteVideo(video.id)}
+                        className="text-red-600 text-sm hover:underline"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </MainLayout>
   );

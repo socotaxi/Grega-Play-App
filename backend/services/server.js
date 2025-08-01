@@ -12,7 +12,14 @@ const { createClient } = require('@supabase/supabase-js');
 const app = express();
 const PORT = 4000; // <-- 🚨 Changement ici
 
-app.use(cors());
+const corsOptions = {
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://grega-play.vercel.app'],
+  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type'],
+  credentials: false,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 const supabase = createClient(
@@ -101,6 +108,45 @@ app.post('/api/videos/process', async (req, res) => {
     console.error('❌ Erreur génération vidéo :', error);
     return res.status(500).json({ error: error.message || 'Erreur serveur' });
   }
+});
+
+// 🔥 ROUTE POUR SUPPRIMER UNE VIDÉO PAR ID
+app.delete('/api/videos/:id', async (req, res) => {
+  const { id } = req.params;
+
+  // 1. Récupère la vidéo dans la DB pour avoir son chemin
+  const { data: video, error: fetchError } = await supabase
+    .from('videos')
+    .select('storage_path')
+    .eq('id', id)
+    .single();
+
+  if (fetchError || !video) {
+    return res.status(404).json({ error: 'Vidéo non trouvée' });
+  }
+
+  // 2. Supprime la vidéo dans le bucket Supabase
+  const { error: storageError } = await supabase
+    .storage
+    .from('videos')
+    .remove([video.storage_path]);
+
+  if (storageError) {
+    console.error('Erreur suppression fichier:', storageError);
+    return res.status(500).json({ error: 'Erreur lors de la suppression du fichier' });
+  }
+
+  // 3. Supprime la ligne dans la table Supabase
+  const { error: deleteError } = await supabase
+    .from('videos')
+    .delete()
+    .eq('id', id);
+
+  if (deleteError) {
+    return res.status(500).json({ error: 'Erreur suppression base de données' });
+  }
+
+  res.status(200).json({ success: true });
 });
 
 app.listen(PORT, () => {
